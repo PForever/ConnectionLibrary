@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="NUnit" Version="3.10.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Abstract\Modules\ScriptBuilder\" />
+    <Folder Include="Abstract\Modules\ScriptManager\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\RaspbIoT\DbFactory\DbSingleton.csproj" />
+    <ProjectReference Include="..\..\RaspbIoT\SqliteDb\SqliteDb.csproj" />
+    <ProjectReference Include="..\LogFactory\LogSingleton.csproj" />
+  </ItemGroup>
+
+</Project>
