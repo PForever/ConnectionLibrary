@@ -68,7 +68,7 @@ namespace ConnectionLibrary.Abstract.Modules.MessageManager.Clients
                     string message = Encoding.UTF8.GetString(bytes);
                     string host = endPoint.Address.ToString(); /*receiveResult.RemoteEndPoint.Address.ToString();*/
                     RemoteHostInfo hostInfo = new RemoteHostInfo(host, Name);
-                    Logger.Debug($"Recived from {host} via {Name} message {message}");
+                    Logger.Info($"Recived from {host} via {Name} message {message}");
                     _OnMessage?.Invoke(this, new EventDataArg<string>(hostInfo, message));
                 }
                 catch (Exception e)

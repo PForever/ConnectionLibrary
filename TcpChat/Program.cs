@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading.Tasks;
 using ConnectionLibrary;
 using ConnectionLibrary.Abstract.DataObjects.Containers;
-using ConnectionLibrary.Abstract.DataObjects.Devices;
 using ConnectionLibrary.Abstract.DataObjects.Messages;
 using ConnectionLibrary.Abstract.Modules.MessageManager.Handlers.Args;
 using ConnectionLibrary.Abstract.Modules.MessageManager.Handlers.Delegates;

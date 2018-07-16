@@ -85,7 +85,7 @@ namespace ConnectionLibrary.Modules.MessageManager
 
         public void OnSend(object sender, EventDataArg<string> e)
         {
-            Logger.Info($"Send to {e.HostInfo.Host} via {e.HostInfo.Protocol} message {e.Data}");
+            Logger.Debug($"Send to {e.HostInfo.Host} via {e.HostInfo.Protocol} message {e.Data}");
             switch (e.HostInfo.Protocol)
             {
                 case UdpSender.Name:

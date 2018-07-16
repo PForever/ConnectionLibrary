@@ -15,8 +15,7 @@ namespace ConnectionLibrary.Abstract.Modules.DbManager
         protected abstract void UpdateOrder(List<Order> orders);
         protected IDictionary<string, IList<string>> UpdateCollection;
         protected abstract bool ActualCheck(Telemetry telemetry);
-        public abstract ConnectionResult GetData(List<string> properties, out IDictionary<string, IList<Telemetry>> telemetries);
-        public abstract Devices GetDevices(IList<string> deviceCodes = null,
-            IList<string> propNames = null);
+        public abstract ConnectionResult GetData(out IDictionary<string, IList<Telemetry>> telemetries, IList<string> getProperties, IDictionary<string, PropertiesValues> setProperties = null);
+        public abstract Devices GetDevices(IList<string> deviceCodes = null, IList<string> propNames = null);
     }
 }

@@ -34,6 +34,7 @@ namespace ConnectionLibrary.Modules.DbManager
             int err = DbWriter.AddDevice(device.Code, device.Name, device.MacAddress);
             if (err != 0)Logger.Error($"Db error on add {device.Code} code: {err}");
             //TODO на сторону бд!
+            if(device.Info == null) return;
             var props = device.Info;
             foreach (var prop in props)
             {

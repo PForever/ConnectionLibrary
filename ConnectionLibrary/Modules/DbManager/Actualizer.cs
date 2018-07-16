@@ -1,16 +1,16 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using ConnectionLibrary.Abstract.DataObjects.Containers;
+﻿using ConnectionLibrary.Abstract.DataObjects.Containers;
 using ConnectionLibrary.Abstract.DataObjects.DeviceInfo;
 using ConnectionLibrary.Abstract.DataObjects.Messages;
 using ConnectionLibrary.Abstract.Modules.DbManager;
 using ConnectionLibrary.Abstract.Modules.MessageManager;
 using ConnectionLibrary.Abstract.Modules.MessageManager.Handlers.Args;
 using LogSingleton;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace ConnectionLibrary.Modules.DbManager
 {
@@ -64,6 +64,30 @@ namespace ConnectionLibrary.Modules.DbManager
             }
             return orders;
         }
+        protected List<Order> CreateOrders(IDictionary<string, IList<Telemetry>> telemetries, out IList<string> devices, out IDictionary<string, IList<Telemetry>> oldTelemetries, IDictionary<string, PropertiesValues> setProperties)
+        {
+            List<Order> orders = new List<Order>();
+            oldTelemetries = new Dictionary<string, IList<Telemetry>>();
+            devices = new List<string>();
+            List<string> setKeys = setProperties.Keys.ToList();
+            if(telemetries != null && telemetries.Count != 0)
+                foreach (var telemetryList in telemetries)
+                {
+                    PropertiesValues setProps = setProperties.ContainsKey(telemetryList.Key) ? setProperties[telemetryList.Key] : null;
+                    Order order = CreateOrder(telemetryList, out var oldTelemetriesList, setProps);
+                    if(oldTelemetriesList.Count == 0) continue;
+                    oldTelemetries.Add(telemetryList.Key, oldTelemetriesList);
+                    orders.Add(order);
+                    devices.Add(order.TargetDeviceCode);
+                    setKeys.Remove(telemetryList.Key);
+                }
+            foreach (string key in setKeys)
+            {
+                Order setOrder = new Order(_myCode, DateTime.Now, key, setPropertiesValues: new Dictionary<string, PropertiesValues>{{key, setProperties[key]}});
+                orders.Add(setOrder);
+            }
+            return orders;
+        }
 
         //TODO убедиться, что в базе данные групперуются перед выдачей
         /// <summary>
@@ -73,8 +97,10 @@ namespace ConnectionLibrary.Modules.DbManager
         /// </summary>
         /// <param name="telemetries"></param>
         /// <param name="oldTelemetries"></param>
+        /// <param name="setProps"></param>
         /// <returns></returns>
-        protected Order CreateOrder(KeyValuePair<string, IList<Telemetry>> telemetries, out List<Telemetry> oldTelemetries)
+        protected Order CreateOrder(KeyValuePair<string, IList<Telemetry>> telemetries,
+            out List<Telemetry> oldTelemetries, PropertiesValues setProps = null)
         {
             oldTelemetries = new List<Telemetry>();
             var getList = new HashSet<string>();
@@ -86,25 +112,43 @@ namespace ConnectionLibrary.Modules.DbManager
                     i++;
                     continue;
                 }
+
                 foreach (string s in telemetry.Values.Keys)
                 {
                     getList.Add(s);
                 }
+
                 oldTelemetries.Add(telemetry);
                 telemetries.Value.Remove(telemetry);
             }
-
-            Order order = new Order(_myCode, DateTime.Now, telemetries.Key, getPropertiesValues: getList.ToList());
+            var setPropDict = setProps == null ? null : new Dictionary<string, PropertiesValues>{{telemetries.Key, setProps}};
+            var getPropertiesValues = new Dictionary<string, List<string>> {{telemetries.Key, getList.ToList()}};
+            Order order = new Order(_myCode, DateTime.Now, telemetries.Key, getPropertiesValues: getPropertiesValues, setPropertiesValues: setPropDict);
             return order;
         }
+
         //TODO гарантировать добавление в результат старых данных в случае ошибки апдейта
-        public override ConnectionResult GetData(List<string> properties, out IDictionary<string, IList<Telemetry>> telemetries)
+        public override ConnectionResult GetData(out IDictionary<string, IList<Telemetry>> telemetries,
+            IList<string> properties, IDictionary<string, PropertiesValues> setProperties = null)
         {
             telemetries = DbController.GetData(properties: properties);
-            List<Order> orders = CreateOrders(telemetries, out IList<string> devices, out IDictionary<string, IList<Telemetry>> oldTelemetries);
+            IDictionary<string, IList<Telemetry>> oldTelemetries;
+            IList<string> devices;
+            List<Order> orders = setProperties == null ? 
+                CreateOrders(telemetries, out devices, out oldTelemetries) : 
+                CreateOrders(telemetries, out devices, out oldTelemetries, setProperties);
+
+            ConnectionResult err = ConnectionResult.Successful;
             UpdateOrder(orders);
-            var err = WaitRecall(devices, ActualSpan, out IList<Telemetry> updatedTelemetries);
-            BuildTelemetries(telemetries, updatedTelemetries);
+            if (devices.Any())
+            {
+                IList<Telemetry> updatedTelemetries = null;
+                //var task = Task.Run(()=> );
+                //task.Wait();
+                //err = task.Result;
+                err = WaitRecall(devices, ActualSpan, out updatedTelemetries);
+                BuildTelemetries(telemetries, updatedTelemetries);
+            }
             return err;
         }
 
@@ -129,10 +173,16 @@ namespace ConnectionLibrary.Modules.DbManager
         }
         protected ConnectionResult WaitRecall(IList<string> deviceCodes, TimeSpan timeOut, out IList<Telemetry> telemetries)
         {
+            StringBuilder devices = new StringBuilder(deviceCodes.Count);
+            foreach (string deviceCode in deviceCodes)
+            {
+                devices.Append(deviceCode).Append("; ");
+            }
+            Logger.Debug($"Waiting Telemetry from {devices}");
+
             var sTime = new SynchronizeData();
             var sData = new SynchronizeData();
             ConcurrentBag<Telemetry> concurrent = new ConcurrentBag<Telemetry>();
-
             void TimeElapsed()
             {
                 Task.Delay(timeOut).Wait();
@@ -142,7 +192,7 @@ namespace ConnectionLibrary.Modules.DbManager
             {
                 if (!deviceCodes.Contains(args.DeviceCode)) return;
                 concurrent.Add(args);
-                deviceCodes.Remove(args.DeviceCode);
+                lock (deviceCodes) {deviceCodes.Remove(args.DeviceCode);}
                 if (deviceCodes.Count == 0) sData.IsEmty = false;
             }
             DbController.DataAdded += OnTelemetry;
@@ -152,7 +202,16 @@ namespace ConnectionLibrary.Modules.DbManager
 
             telemetries = concurrent.ToArray();
             if (sData.ResultInfo == SynchronizeResult.Empty)
+            {
+                StringBuilder devicesLost = new StringBuilder(deviceCodes.Count);
+                foreach (string deviceCode in deviceCodes)
+                {
+                    devicesLost.Append(deviceCode).Append("; ");
+                }
+                Logger.Error($"Not Found Telemetry from {devicesLost}");
                 return ConnectionResult.NotFound;
+            }
+            Logger.Debug($"Waiting Telemetry from {devices}");
             return ConnectionResult.Successful;
         }
         public ILogger Logger { get; }

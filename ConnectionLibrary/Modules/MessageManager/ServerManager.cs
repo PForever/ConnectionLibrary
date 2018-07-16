@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using ConnectionLibrary.Abstract.DataObjects.Containers;
 using ConnectionLibrary.Abstract.DataObjects.Messages;
 using ConnectionLibrary.Abstract.Modules.MessageManager.Clients;
@@ -39,7 +40,7 @@ namespace ConnectionLibrary.Modules.MessageManager
 
         public void EventDataHandler(object sender, EventDataArg<string> e)
         {
-            Logger.Info($"Invoked EventDataHandler for {e.HostInfo.Host} via {e.HostInfo.Protocol}, message {e.Data}");
+            Logger.Debug($"Invoked EventDataHandler for {e.HostInfo.Host} via {e.HostInfo.Protocol}, message {e.Data}");
             IMessage message = Deserializing.GetMessage(e.Data, out MessageType type);
             Logger.Debug($"File {message} deserialized to {type} for {e.HostInfo.Host} via {e.HostInfo.Protocol}, message {e.Data}");
             if (message == default(IMessage))

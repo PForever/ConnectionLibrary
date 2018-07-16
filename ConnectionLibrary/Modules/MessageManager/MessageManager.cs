@@ -136,56 +136,75 @@ namespace ConnectionLibrary.Modules.MessageManager
         //TODO все войды заменить на проброс ошибок. Шоб было
         public override void OnRequest(object sender, EventRequestArgs args)
         {
-            Logger.Debug($"MessageManager.OnRequest Invoked from {sender} code: {args.Message.TargetDeviceCode}");
-            var err = Worker.OpenDeviceConnection(args.Message.TargetDeviceCode, out RemoteHostInfo connectInfo);
-            if (err != 0) return;
-            Sender.OnRequest(connectInfo, args);
-            Worker.CloseDeviceConnection(args.Message.TargetDeviceCode, connectInfo);
+            //TODO подумать как можно блокировать только для конкретного устройства
+            lock (this)
+            {
+                Logger.Debug($"MessageManager.OnRequest Invoked from {sender} code: {args.Message.TargetDeviceCode}");
+                var err = Worker.OpenDeviceConnection(args.Message.TargetDeviceCode, out RemoteHostInfo connectInfo);
+                if (err != 0) return;
+                Sender.OnRequest(connectInfo, args);
+                Worker.CloseDeviceConnection(args.Message.TargetDeviceCode, connectInfo);
+            }
         }
 
         public override void OnConnectMessage(object sender, EventMessageConnectArgs args)
         {
-            Logger.Debug($"MessageManager.OnRequest Invoked from {sender} code: {args.Message.TargetDeviceCode}");
-            var err = Worker.OpenDeviceConnection(args.Message.TargetDeviceCode, out RemoteHostInfo connectInfo);
-            if (err != 0) return;
-            Sender.OnConnectMessage(connectInfo, args);
-            Worker.CloseDeviceConnection(args.Message.TargetDeviceCode, connectInfo);
+            lock (this)
+            {
+                Logger.Debug($"MessageManager.OnRequest Invoked from {sender} code: {args.Message.TargetDeviceCode}");
+                var err = Worker.OpenDeviceConnection(args.Message.TargetDeviceCode, out RemoteHostInfo connectInfo);
+                if (err != 0) return;
+                Sender.OnConnectMessage(connectInfo, args);
+                Worker.CloseDeviceConnection(args.Message.TargetDeviceCode, connectInfo);
+            }
         }
 
         public override void OnCommandMessage(object sender, EventCommandMessageArgs args)
         {
-            Logger.Debug($"MessageManager.OnRequest Invoked from {sender} code: {args.Message.TargetDeviceCode}");
-            var err = Worker.OpenDeviceConnection(args.Message.TargetDeviceCode, out RemoteHostInfo connectInfo);
-            if (err != 0) return;
-            Sender.OnCommandMessage(connectInfo, args);
-            Worker.CloseDeviceConnection(args.Message.TargetDeviceCode, connectInfo);
+            lock (this)
+            {
+                Logger.Debug($"MessageManager.OnRequest Invoked from {sender} code: {args.Message.TargetDeviceCode}");
+                var err = Worker.OpenDeviceConnection(args.Message.TargetDeviceCode, out RemoteHostInfo connectInfo);
+                if (err != 0) return;
+                Sender.OnCommandMessage(connectInfo, args);
+                Worker.CloseDeviceConnection(args.Message.TargetDeviceCode, connectInfo);
+            }
         }
 
         public override void OnTelemetry(object sender, EventTelemetryArgs args)
         {
-            Logger.Debug($"MessageManager.OnRequest Invoked from {sender} code: {args.Message.TargetDeviceCode}");
-            var err = Worker.OpenDeviceConnection(args.Message.TargetDeviceCode, out RemoteHostInfo connectInfo);
-            if (err != 0) return;
-            Sender.OnTelemetry(connectInfo, args);
-            Worker.CloseDeviceConnection(args.Message.TargetDeviceCode, connectInfo);
+            lock (this)
+            {
+                Logger.Debug($"MessageManager.OnRequest Invoked from {sender} code: {args.Message.TargetDeviceCode}");
+                var err = Worker.OpenDeviceConnection(args.Message.TargetDeviceCode, out RemoteHostInfo connectInfo);
+                if (err != 0) return;
+                Sender.OnTelemetry(connectInfo, args);
+                Worker.CloseDeviceConnection(args.Message.TargetDeviceCode, connectInfo);
+            }
         }
 
         public override void OnEventErrorMessage(object sender, EventErrArgs args)
         {
-            Logger.Debug($"MessageManager.OnRequest Invoked from {sender} code: {args.Message.TargetDeviceCode}");
-            var err = Worker.OpenDeviceConnection(args.Message.TargetDeviceCode, out RemoteHostInfo connectInfo);
-            if (err != 0) return;
-            Sender.OnEventErrorMessage(connectInfo, args);
-            Worker.CloseDeviceConnection(args.Message.TargetDeviceCode, connectInfo);
+            lock (this)
+            {
+                Logger.Debug($"MessageManager.OnRequest Invoked from {sender} code: {args.Message.TargetDeviceCode}");
+                var err = Worker.OpenDeviceConnection(args.Message.TargetDeviceCode, out RemoteHostInfo connectInfo);
+                if (err != 0) return;
+                Sender.OnEventErrorMessage(connectInfo, args);
+                Worker.CloseDeviceConnection(args.Message.TargetDeviceCode, connectInfo);
+            }
         }
 
         public override void OnOrder(object sender, EventOrderArgs args)
         {
-            Logger.Debug($"MessageManager.OnRequest Invoked from {sender} code: {args.Message.TargetDeviceCode}");
-            var err = Worker.OpenDeviceConnection(args.Message.TargetDeviceCode, out RemoteHostInfo connectInfo);
-            if (err != 0) return;
-            Sender.OnOrder(connectInfo, args);
-            Worker.CloseDeviceConnection(args.Message.TargetDeviceCode, connectInfo);
+            lock (this)
+            {
+                Logger.Debug($"MessageManager.OnRequest Invoked from {sender} code: {args.Message.TargetDeviceCode}");
+                var err = Worker.OpenDeviceConnection(args.Message.TargetDeviceCode, out RemoteHostInfo connectInfo);
+                if (err != 0) return;
+                Sender.OnOrder(connectInfo, args);
+                Worker.CloseDeviceConnection(args.Message.TargetDeviceCode, connectInfo);
+            }
         }
 
         #endregion

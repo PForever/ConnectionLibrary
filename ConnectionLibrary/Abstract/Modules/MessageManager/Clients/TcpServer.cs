@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using ConnectionLibrary.Abstract.Modules.MessageManager.Clients.Protocoles;
 using ConnectionLibrary.Abstract.Modules.MessageManager.Clients.Protocoles.Containers;
@@ -15,6 +16,7 @@ namespace ConnectionLibrary.Abstract.Modules.MessageManager.Clients
     {
         private const int MaxLen = 256;
         public const string Name = "TCP";
+
         public void Dispose()
         {
             Stop();
@@ -33,13 +35,17 @@ namespace ConnectionLibrary.Abstract.Modules.MessageManager.Clients
         public IConnectPoint<int> LocalHost { get; set; }
 
         #region OnMessage
+
         private event Action<object, EventDataArg<string>> _OnMessage;
+
         public event Action<object, EventDataArg<string>> OnMessage
         {
             add => _OnMessage += value;
             remove => _OnMessage -= value;
         }
+
         #endregion
+
         public bool IsListening { get; private set; }
 
         public void Start()
@@ -48,18 +54,22 @@ namespace ConnectionLibrary.Abstract.Modules.MessageManager.Clients
             IsListening = true;
             //TODO обработка закрытия tcp... твою мать
             TcpListener.Start();
-            _openConnection = ConnectionAsync();
+            //Thread tread = new Thread(ConnectionAsync);
+            //tread.Start();
+            _openConnection = Task.Run(() => ConnectionAsync());
         }
+
         //TODO найти бы способ дисконектиться поизященее
         private Task _openConnection;
-        private async Task ConnectionAsync()
+
+        private void ConnectionAsync()
         {
             while (IsListening)
             {
                 Logger.Debug($"Reciving message from localPort via {Name}");
                 try
                 {
-                    using (var tcpClient = await TcpListener.AcceptTcpClientAsync())
+                    using (var tcpClient = TcpListener.AcceptTcpClient())
                     using (var network = tcpClient.GetStream())
                     {
                         byte[] buffer = new byte[MaxLen];
@@ -69,14 +79,15 @@ namespace ConnectionLibrary.Abstract.Modules.MessageManager.Clients
                             int partCount = network.Read(buffer, 0, buffer.Length);
                             messageBldr.Append(Encoding.UTF8.GetString(buffer, 0, partCount));
                         } while (network.DataAvailable);
+
                         string message = messageBldr.ToString();
                         string host = tcpClient.Client.RemoteEndPoint.GetIp();
                         RemoteHostInfo hostInfo = new RemoteHostInfo(host, Name);
                         Logger.Info($"Recived from {host} via {Name} message {message}");
-                        _OnMessage?.Invoke(this, new EventDataArg<string>(hostInfo, message));
+                        Task.Run(() => _OnMessage?.Invoke(this, new EventDataArg<string>(hostInfo, message)));
                     }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     Logger.Debug($"Reciving message from localPort via {Name} stoped");
                 }

@@ -12,7 +12,7 @@ using LogSingleton;
 
 namespace ConnectionLibrary.Modules.MessageManager
 {
-    public class ConnectionWorker : AConnectionWorker, ICodeble
+    public class ConnectionWorker : AConnectionWorker, ICodeble, ILoggable
     {
         public string MyCode { get; set; }
 
@@ -25,6 +25,8 @@ namespace ConnectionLibrary.Modules.MessageManager
         protected ConnectionWorker() { }
         public ConnectionWorker(string multicastHost, TimeSpan timeOut, IObjectParser sender, IMessageParser server, IDb dbManager, string myCode)
         {
+            Logger = Logging.Log;
+
             _multicastHost = multicastHost;
             _timeOut = timeOut;
             Sender = sender;
@@ -127,6 +129,8 @@ namespace ConnectionLibrary.Modules.MessageManager
 
         protected ConnectionResult WaitReady(string deviceCode, TimeSpan timeOut)
         {
+            Logger.Debug($"Waiting {CallType.Call} from {deviceCode}");
+
             var sData = new SynchronizeData();
             var sTime = new SynchronizeData();
 
@@ -148,12 +152,18 @@ namespace ConnectionLibrary.Modules.MessageManager
             Server.CallReceived -= OnCallReady;
 
             if (sData.ResultInfo == SynchronizeResult.Empty)
+            {
+                Logger.Error($"Not Found {CallType.Ready} from {deviceCode}");
                 return ConnectionResult.NotFound;
+            }
+            Logger.Debug($"Waited {CallType.Call} from {deviceCode}");
             return ConnectionResult.Successful;
         }
 
         protected ConnectionResult WaitRecall(string deviceCode, TimeSpan timeOut, out string ip)
         {
+            Logger.Debug($"Waiting {CallType.Recall} from {deviceCode}");
+
             var sTime = new SynchronizeData();
             var sData = new SynchronizeData<string>();
 
@@ -177,7 +187,12 @@ namespace ConnectionLibrary.Modules.MessageManager
 
             ip = sData.Data;
             if (sData.ResultInfo == SynchronizeResult.Empty)
+            {
+                Logger.Error($"Not Found {CallType.Recall} from {deviceCode}");
                 return ConnectionResult.NotFound;
+            }
+
+            Logger.Debug($"Waited {CallType.Recall} from {deviceCode}");
             return ConnectionResult.Successful;
         }
 
@@ -201,5 +216,7 @@ namespace ConnectionLibrary.Modules.MessageManager
         {
             AddressBook.AddOrUpdate(code, addresses, (s, oldAddress) => addresses);
         }
+
+        public ILogger Logger { get; }
     }
 }

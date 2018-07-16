@@ -27,10 +27,10 @@ namespace ConnectionLibrary.Modules.RequestManager
 
         public override void OnOrder(EventOrderArgs eventOrder)
         {
-            var devices = _actulizer.GetDevices(propNames: eventOrder.Order.GetPropertiesValues);
-            //TODO нужно грегировать получения и выдачу данных
-
-            _actulizer.GetData(eventOrder.Order.GetPropertiesValues, out IDictionary<string, IList<Telemetry>> telemetries);
+            //TODO обработка запросов к конкретным устройствам
+            if(!eventOrder.Order.GetPropertiesValues.ContainsKey(MyCode)) throw  new NotImplementedException();
+            var devices = _actulizer.GetDevices(propNames: eventOrder.Order.GetPropertiesValues[MyCode]);
+            _actulizer.GetData(out IDictionary<string, IList<Telemetry>> telemetries, eventOrder.Order.GetPropertiesValues[MyCode], eventOrder.Order.SetPropertiesValues);
             Request request = new Request(MyCode, "", DateTime.Now, eventOrder.Order.DeviceCode, telemetries, devices);
             _messageManager.OnRequest(this, new EventRequestArgs(request));
         }
